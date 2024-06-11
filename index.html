@@ -22,7 +22,7 @@
 var scene, camera, renderer, clock, deltaTime, totalTime;
 var arToolkitSource, arToolkitContext;
 var markerRoot1;
-var mixer;
+var mixer, mesh1;
 
 initialize();
 animate();
@@ -99,7 +99,7 @@ function initialize() {
         camera.projectionMatrix.copy(arToolkitContext.getProjectionMatrix());
     });
 
-    // setup markerRoots
+    // setup markerRoots for GLTF model and cube
     markerRoot1 = new THREE.Group();
     scene.add(markerRoot1);
     let markerControls1 = new THREEx.ArMarkerControls(arToolkitContext, markerRoot1, {
@@ -109,6 +109,7 @@ function initialize() {
         }
     });
 
+    // Load and add GLTF model
     console.log("Loading GLTF model...");
     let gltfLoader = new THREE.GLTFLoader();
     gltfLoader.load('models/scene.gltf', function (gltf) {
@@ -140,6 +141,18 @@ function initialize() {
     }, undefined, function (error) {
         console.error("Error loading model:", error);
     });
+
+    // Add cube
+    let geometry1 = new THREE.BoxGeometry(1, 1, 1);
+    let material1 = new THREE.MeshNormalMaterial({
+        transparent: true,
+        opacity: 0.5,
+        side: THREE.DoubleSide
+    });
+
+    mesh1 = new THREE.Mesh(geometry1, material1);
+    mesh1.position.y = 0.5;
+    markerRoot1.add(mesh1);
 }
 
 function update() {
