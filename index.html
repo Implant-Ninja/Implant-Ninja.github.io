@@ -41,11 +41,6 @@ function initialize() {
     directionalLight.position.set(1, 1, 1).normalize();
     scene.add(directionalLight);
 
-    // Add point light
-    let pointLight = new THREE.PointLight(0xffffff, 1, 100);
-    pointLight.position.set(50, 50, 50);
-    scene.add(pointLight);
-
     camera = new THREE.Camera();
     scene.add(camera);
 
@@ -54,8 +49,8 @@ function initialize() {
         alpha: true,
         precision: 'highp'
     });
-    renderer.setClearColor(new THREE.Color('lightgrey'), 0);
-    renderer.setSize(640, 480);
+    // Set renderer size to window dimensions for better responsiveness
+    renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.domElement.style.position = 'absolute';
     renderer.domElement.style.top = '0px';
     renderer.domElement.style.left = '0px';
@@ -67,7 +62,7 @@ function initialize() {
 
     // setup arToolkitSource
     arToolkitSource = new THREEx.ArToolkitSource({
-        sourceType: 'webcam'
+        sourceType: 'webcam',
     });
 
     function onResize() {
