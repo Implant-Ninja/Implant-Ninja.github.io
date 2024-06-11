@@ -45,22 +45,13 @@ function initialize() {
     pointLight.position.set(50, 50, 50);
     scene.add(pointLight);
 
-    // Environment map (Optional)
-    /*
-    const loader = new THREE.CubeTextureLoader();
-    const texture = loader.load([
-        'path/to/px.jpg', 'path/to/nx.jpg',
-        'path/to/py.jpg', 'path/to/ny.jpg',
-        'path/to/pz.jpg', 'path/to/nz.jpg',
-    ]);
-    scene.background = texture;*/
-
     camera = new THREE.Camera();
     scene.add(camera);
 
     renderer = new THREE.WebGLRenderer({
         antialias: true,
-        alpha: true
+        alpha: true,
+        precision: 'highp'
     });
     renderer.setClearColor(new THREE.Color('lightgrey'), 0);
     renderer.setSize(640, 480);
@@ -124,6 +115,20 @@ function initialize() {
         console.log("Model loaded successfully.");
         let model = gltf.scene;
         model.scale.set(0.05, 0.05, 0.05);  // Adjust the scale if necessary
+
+        // Improve texture filtering
+        model.traverse(function (node) {
+            if (node.isMesh) {
+                node.material.side = THREE.DoubleSide;
+                node.material.needsUpdate = true;
+                if (node.material.map) {
+                    node.material.map.anisotropy = renderer.capabilities.getMaxAnisotropy();
+                    node.material.map.minFilter = THREE.LinearMipmapLinearFilter;
+                    node.material.map.magFilter = THREE.LinearFilter;
+                }
+            }
+        });
+
         markerRoot1.add(model);
 
         // Create animation mixer and play animations
