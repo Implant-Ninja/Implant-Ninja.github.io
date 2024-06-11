@@ -49,7 +49,7 @@ function initialize() {
         alpha: true,
         precision: 'highp'
     });
-    // Set renderer size to window dimensions for better responsiveness
+    // Ensure the renderer size matches window dimensions
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.domElement.style.position = 'absolute';
     renderer.domElement.style.top = '0px';
@@ -60,9 +60,13 @@ function initialize() {
     deltaTime = 0;
     totalTime = 0;
 
-    // setup arToolkitSource
+    // setup arToolkitSource with higher resolution
     arToolkitSource = new THREEx.ArToolkitSource({
         sourceType: 'webcam',
+        sourceWidth: 1920,
+        sourceHeight: 1080,
+        displayWidth: 1920,
+        displayHeight: 1080
     });
 
     function onResize() {
