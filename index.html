@@ -20,10 +20,9 @@
 
 <script>
 var scene, camera, renderer, clock, deltaTime, totalTime;
-
 var arToolkitSource, arToolkitContext;
-
 var markerRoot1;
+var mixer;
 
 initialize();
 animate();
@@ -103,8 +102,15 @@ function initialize() {
     loader.load('models/scene.gltf', function (gltf) {
         console.log("Model loaded successfully.");
         let model = gltf.scene;
-        model.scale.set(0.05, 0.05, 0.05);  // Adjust the scale if necessary
+        model.scale.set(0.5, 0.5, 0.5);  // Adjust the scale if necessary
         markerRoot1.add(model);
+
+        // Create animation mixer and play animations
+        mixer = new THREE.AnimationMixer(model);
+        gltf.animations.forEach((clip) => {
+            mixer.clipAction(clip).play();
+        });
+
     }, undefined, function (error) {
         console.error("Error loading model:", error);
     });
@@ -114,6 +120,11 @@ function update() {
     // update artoolkit on every frame
     if (arToolkitSource.ready !== false)
         arToolkitContext.update(arToolkitSource.domElement);
+
+    // update the animation mixer
+    if (mixer) {
+        mixer.update(deltaTime);
+    }
 }
 
 function render() {
