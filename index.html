@@ -31,8 +31,29 @@ function initialize() {
     console.log("Initializing scene...");
     scene = new THREE.Scene();
 
+    // Add ambient light
     let ambientLight = new THREE.AmbientLight(0xcccccc, 0.5);
     scene.add(ambientLight);
+
+    // Add directional light
+    let directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(1, 1, 1).normalize();
+    scene.add(directionalLight);
+
+    // Add point light
+    let pointLight = new THREE.PointLight(0xffffff, 1, 100);
+    pointLight.position.set(50, 50, 50);
+    scene.add(pointLight);
+
+    // Environment map (Optional)
+    /*
+    const loader = new THREE.CubeTextureLoader();
+    const texture = loader.load([
+        'path/to/px.jpg', 'path/to/nx.jpg',
+        'path/to/py.jpg', 'path/to/ny.jpg',
+        'path/to/pz.jpg', 'path/to/nz.jpg',
+    ]);
+    scene.background = texture;*/
 
     camera = new THREE.Camera();
     scene.add(camera);
@@ -98,8 +119,8 @@ function initialize() {
     });
 
     console.log("Loading GLTF model...");
-    let loader = new THREE.GLTFLoader();
-    loader.load('models/scene.gltf', function (gltf) {
+    let gltfLoader = new THREE.GLTFLoader();
+    gltfLoader.load('models/scene.gltf', function (gltf) {
         console.log("Model loaded successfully.");
         let model = gltf.scene;
         model.scale.set(0.05, 0.05, 0.05);  // Adjust the scale if necessary
