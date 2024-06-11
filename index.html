@@ -22,7 +22,8 @@
 var scene, camera, renderer, clock, deltaTime, totalTime;
 var arToolkitSource, arToolkitContext;
 var markerRoot1;
-var mixer, mesh1;
+var mixer, mesh1, gltfModel;
+var raycaster, mouse;
 
 initialize();
 animate();
@@ -114,11 +115,11 @@ function initialize() {
     let gltfLoader = new THREE.GLTFLoader();
     gltfLoader.load('models/scene.gltf', function (gltf) {
         console.log("Model loaded successfully.");
-        let model = gltf.scene;
-        model.scale.set(0.05, 0.05, 0.05);  // Adjust the scale if necessary
+        gltfModel = gltf.scene;
+        gltfModel.scale.set(0.05, 0.05, 0.05);  // Adjust the scale if necessary
 
         // Improve texture filtering
-        model.traverse(function (node) {
+        gltfModel.traverse(function (node) {
             if (node.isMesh) {
                 node.material.side = THREE.DoubleSide;
                 node.material.needsUpdate = true;
@@ -130,10 +131,10 @@ function initialize() {
             }
         });
 
-        markerRoot1.add(model);
+        markerRoot1.add(gltfModel);
 
         // Create animation mixer and play animations
-        mixer = new THREE.AnimationMixer(model);
+        mixer = new THREE.AnimationMixer(gltfModel);
         gltf.animations.forEach((clip) => {
             mixer.clipAction(clip).play();
         });
@@ -151,8 +152,40 @@ function initialize() {
     });
 
     mesh1 = new THREE.Mesh(geometry1, material1);
-    mesh1.position.y = 0.5;
+    mesh1.position.y = 1.0;
     markerRoot1.add(mesh1);
+
+    // Initialize raycaster and mouse
+    raycaster = new THREE.Raycaster();
+    mouse = new THREE.Vector2();
+
+    // Add event listener for clicks
+    renderer.domElement.addEventListener('click', onDocumentMouseClick, false);
+}
+
+function onDocumentMouseClick(event) {
+    event.preventDefault();
+
+    // Calculate mouse position in normalized device coordinates (-1 to +1) for both components
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    // Update the raycaster with the camera and mouse position
+    raycaster.setFromCamera(mouse, camera);
+
+    // Calculate objects intersecting the picking ray
+    var intersects = raycaster.intersectObjects(markerRoot1.children, true);
+
+    if (intersects.length > 0) {
+        var firstObject = intersects[0].object;
+        if (firstObject === mesh1) {
+            console.log("Clicked Cube");
+            alert("Clicked Cube");
+        } else if (gltfModel && gltfModel.contains(firstObject)) {
+            console.log("Clicked Skull");
+            alert("Clicked Skull");
+        }
+    }
 }
 
 function update() {
