@@ -15,6 +15,11 @@
     <script src="threex/threex-armarkercontrols.js"></script>
     <!-- include GLTFLoader -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.112.1/examples/js/loaders/GLTFLoader.js"></script>
+    <!-- include postprocessing scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.112.1/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.112.1/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.112.1/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.112.1/examples/js/shaders/FXAAShader.js"></script>
 </head>
 <body style='margin: 0px; overflow: hidden; font-family: Monospace;'>
 
@@ -23,7 +28,7 @@ var scene, camera, renderer, clock, deltaTime, totalTime;
 var arToolkitSource, arToolkitContext;
 var markerRoot1;
 var mixer, mesh1, gltfModel;
-var raycaster, mouse;
+var raycaster, mouse, composer, fxaaPass;
 
 initialize();
 animate();
@@ -45,11 +50,11 @@ function initialize() {
     scene.add(camera);
 
     renderer = new THREE.WebGLRenderer({
-        antialias: true,
+        antialias: true,  // Enable antialiasing
         alpha: true,
         precision: 'highp'
     });
-    // Ensure the renderer size matches window dimensions
+    renderer.setPixelRatio(2);  // Simulate supersampling by rendering at 2x resolution
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.domElement.style.position = 'absolute';
     renderer.domElement.style.top = '0px';
@@ -75,6 +80,8 @@ function initialize() {
         if (arToolkitContext.arController !== null) {
             arToolkitSource.copySizeTo(arToolkitContext.arController.canvas);
         }
+        composer.setSize(window.innerWidth, window.innerHeight);
+        fxaaPass.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight);
     }
 
     arToolkitSource.init(function onReady() {
@@ -83,9 +90,7 @@ function initialize() {
     });
 
     // handle resize event
-    window.addEventListener('resize', function () {
-        onResize();
-    });
+    window.addEventListener('resize', onResize);
 
     // setup arToolkitContext
     arToolkitContext = new THREEx.ArToolkitContext({
@@ -160,6 +165,16 @@ function initialize() {
 
     // Add event listener for clicks
     renderer.domElement.addEventListener('click', onDocumentMouseClick, false);
+
+    // Post-processing
+    composer = new THREE.EffectComposer(renderer);
+    var renderPass = new THREE.RenderPass(scene, camera);
+    composer.addPass(renderPass);
+
+    fxaaPass = new THREE.ShaderPass(THREE.FXAAShader);
+    fxaaPass.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight);
+    fxaaPass.renderToScreen = true;
+    composer.addPass(fxaaPass);
 }
 
 function onDocumentMouseClick(event) {
@@ -199,7 +214,7 @@ function update() {
 }
 
 function render() {
-    renderer.render(scene, camera);
+    composer.render();  // Use composer instead of renderer
 }
 
 function animate() {
