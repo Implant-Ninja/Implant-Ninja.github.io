@@ -152,7 +152,7 @@ function initialize() {
     });
 
     mesh1 = new THREE.Mesh(geometry1, material1);
-    mesh1.position.y = 1.0;
+    mesh1.position.set(0, 2, 0);  // Adjusted the vertical position
     markerRoot1.add(mesh1);
 
     // Initialize raycaster and mouse
