@@ -34,34 +34,34 @@ animate();
 function initialize() {
 	scene = new THREE.Scene();
 
-	let ambientLight = new THREE.AmbientLight(0xcccccc, 0.5);
-	scene.add(ambientLight);
-
-	let directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
-	directionalLight.position.set(1, 1, 1).normalize();
-	scene.add(directionalLight);
-
-	let pointLight = new THREE.PointLight(0xffffff, 0.5);
-	pointLight.position.set(0, 4, 0);
-	scene.add(pointLight);
-
-	camera = new THREE.Camera();
-	scene.add(camera);
-
+	// Set tone mapping and exposure
 	renderer = new THREE.WebGLRenderer({
 		antialias: true,
 		alpha: true
 	});
-	renderer.setClearColor(new THREE.Color('lightgrey'), 0)
+	renderer.setClearColor(new THREE.Color('lightgrey'), 0);
 	renderer.setSize(640, 480);
-	renderer.domElement.style.position = 'absolute'
-	renderer.domElement.style.top = '0px'
-	renderer.domElement.style.left = '0px'
+	renderer.domElement.style.position = 'absolute';
+	renderer.domElement.style.top = '0px';
+	renderer.domElement.style.left = '0px';
+	renderer.toneMapping = THREE.LinearToneMapping;
+	renderer.toneMappingExposure = 1;  // Adjust if necessary
+
 	document.body.appendChild(renderer.domElement);
 
 	clock = new THREE.Clock();
 	deltaTime = 0;
 	totalTime = 0;
+
+	camera = new THREE.Camera();
+	scene.add(camera);
+
+	let ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+	scene.add(ambientLight);
+
+	let directionalLight = new THREE.DirectionalLight(0xffffff, 2.5);
+	directionalLight.position.set(1, 1, 1).normalize();
+	scene.add(directionalLight);
 
 	////////////////////////////////////////////////////////////
 	// setup arToolkitSource
@@ -114,17 +114,23 @@ function initialize() {
 		type: 'pattern', patternUrl: "data/test-pattern.patt",
 	});
 
-	let geometry1 = new THREE.CubeGeometry(3, 1, 1);
-	let material1 = new THREE.MeshNormalMaterial({
+	let geometry1 = new THREE.BoxGeometry(3, 1, 1);
+	let material1 = new THREE.MeshBasicMaterial({
+		color: 0x000000,
 		transparent: true,
-		opacity: 0.1,
+		opacity: 0.5,
 		side: THREE.DoubleSide
 	});
 
 	mesh1 = new THREE.Mesh(geometry1, material1);
 	mesh1.position.y = 0.5;
 
+	// Create an outline for the cube
+	let edges = new THREE.EdgesGeometry(geometry1);
+	let line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff }));
+
 	markerRoot1.add(mesh1);
+	markerRoot1.add(line);
 
 	// Load GLTF model
 	let loader = new THREE.GLTFLoader();
