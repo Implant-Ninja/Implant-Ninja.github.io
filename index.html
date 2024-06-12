@@ -1,225 +1,127 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-    <title>Hello, AR Cube!</title>
-    <!-- include three.js library -->
-    <script src='https://cdn.jsdelivr.net/npm/three@0.112.1/build/three.min.js'></script>
-    <!-- include jsartoolkit -->
-    <script src="jsartoolkit5/artoolkit.min.js"></script>
-    <script src="jsartoolkit5/artoolkit.api.js"></script>
-    <!-- include threex.artoolkit -->
-    <script src="threex/threex-artoolkitsource.js"></script>
-    <script src="threex/threex-artoolkitcontext.js"></script>
-    <script src="threex/threex-arbasecontrols.js"></script>
-    <script src="threex/threex-armarkercontrols.js"></script>
-    <!-- include GLTFLoader -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.112.1/examples/js/loaders/GLTFLoader.js"></script>
-    <!-- include postprocessing scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.112.1/examples/js/postprocessing/EffectComposer.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.112.1/examples/js/postprocessing/RenderPass.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.112.1/examples/js/postprocessing/ShaderPass.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.112.1/examples/js/shaders/FXAAShader.js"></script>
-</head>
-<body style='margin: 0px; overflow: hidden; font-family: Monospace;'>
-
-<script>
 var scene, camera, renderer, clock, deltaTime, totalTime;
+
 var arToolkitSource, arToolkitContext;
-var markerRoot1;
-var mixer, mesh1, gltfModel;
-var raycaster, mouse, composer, fxaaPass;
+
+var markerRoot1, markerRoot2;
+
+var mesh1;
 
 initialize();
 animate();
 
 function initialize() {
-    console.log("Initializing scene...");
-    scene = new THREE.Scene();
+	scene = new THREE.Scene();
 
-    // Add ambient light
-    let ambientLight = new THREE.AmbientLight(0xcccccc, 0.5);
-    scene.add(ambientLight);
+	let ambientLight = new THREE.AmbientLight( 0xcccccc, 0.5 );
+	scene.add( ambientLight );
 
-    // Add directional light
-    let directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-    directionalLight.position.set(1, 1, 1).normalize();
-    scene.add(directionalLight);
+	camera = new THREE.Camera();
+	scene.add(camera);
 
-    camera = new THREE.Camera();
-    scene.add(camera);
+	renderer = new THREE.WebGLRenderer({
+		antialias : true,
+		alpha: true
+	});
+	renderer.setClearColor(new THREE.Color('lightgrey'), 0)
+	renderer.setSize( 640, 480 );
+	renderer.domElement.style.position = 'absolute'
+	renderer.domElement.style.top = '0px'
+	renderer.domElement.style.left = '0px'
+	document.body.appendChild( renderer.domElement );
 
-    renderer = new THREE.WebGLRenderer({
-        antialias: true,  // Enable antialiasing
-        alpha: true,
-        precision: 'highp'
-    });
-    renderer.setPixelRatio(2);  // Simulate supersampling by rendering at 2x resolution
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.domElement.style.position = 'absolute';
-    renderer.domElement.style.top = '0px';
-    renderer.domElement.style.left = '0px';
-    document.body.appendChild(renderer.domElement);
+	clock = new THREE.Clock();
+	deltaTime = 0;
+	totalTime = 0;
 
-    clock = new THREE.Clock();
-    deltaTime = 0;
-    totalTime = 0;
+	////////////////////////////////////////////////////////////
+	// setup arToolkitSource
+	////////////////////////////////////////////////////////////
 
-    // setup arToolkitSource with higher resolution
-    arToolkitSource = new THREEx.ArToolkitSource({
-        sourceType: 'webcam',
-        sourceWidth: 1920,
-        sourceHeight: 1080,
-        displayWidth: 1920,
-        displayHeight: 1080
-    });
+	arToolkitSource = new THREEx.ArToolkitSource({
+		sourceType : 'webcam',
+	});
 
-    function onResize() {
-        arToolkitSource.onResize();
-        arToolkitSource.copySizeTo(renderer.domElement);
-        if (arToolkitContext.arController !== null) {
-            arToolkitSource.copySizeTo(arToolkitContext.arController.canvas);
-        }
-        composer.setSize(window.innerWidth, window.innerHeight);
-        fxaaPass.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight);
-    }
+	function onResize() {
+		arToolkitSource.onResize()
+		arToolkitSource.copySizeTo(renderer.domElement)
+		if ( arToolkitContext.arController !== null ) {
+			arToolkitSource.copySizeTo(arToolkitContext.arController.canvas)
+		}
+	}
 
-    arToolkitSource.init(function onReady() {
-        console.log("AR Toolkit Source ready.");
-        onResize();
-    });
+	arToolkitSource.init(function onReady(){
+		onResize()
+	});
 
-    // handle resize event
-    window.addEventListener('resize', onResize);
+	// handle resize event
+	window.addEventListener('resize', function(){
+		onResize()
+	});
 
-    // setup arToolkitContext
-    arToolkitContext = new THREEx.ArToolkitContext({
-        cameraParametersUrl: 'data/camera_para.dat',
-        detectionMode: 'mono'
-    });
+	////////////////////////////////////////////////////////////
+	// setup arToolkitContext
+	////////////////////////////////////////////////////////////	
 
-    // copy projection matrix to camera when initialization complete
-    arToolkitContext.init(function onCompleted() {
-        console.log("AR Toolkit Context initialized.");
-        camera.projectionMatrix.copy(arToolkitContext.getProjectionMatrix());
-    });
+	// create atToolkitContext
+	arToolkitContext = new THREEx.ArToolkitContext({
+		cameraParametersUrl: 'data/camera_para.dat',
+		detectionMode: 'mono'
+	});
 
-    // setup markerRoots for GLTF model and cube
-    markerRoot1 = new THREE.Group();
-    scene.add(markerRoot1);
-    let markerControls1 = new THREEx.ArMarkerControls(arToolkitContext, markerRoot1, {
-        type: 'pattern', patternUrl: "data/test-pattern.patt",
-        onDetected: function () {
-            console.log("Marker detected!");
-        }
-    });
+	// copy projection matrix to camera when initialization complete
+	arToolkitContext.init( function onCompleted(){
+		camera.projectionMatrix.copy( arToolkitContext.getProjectionMatrix() );
+	});
 
-    // Create transparent box with glowing white border
-    console.log("Creating transparent box with glowing border...");
-    let boxGeometry = new THREE.BoxGeometry(12.5, 2.5, 10);
-    let boxMaterial = new THREE.MeshBasicMaterial({
-        color: 0xffffff,
-        transparent: true,
-        opacity: 0.1
-    });
-    mesh1 = new THREE.Mesh(boxGeometry, boxMaterial);
-    markerRoot1.add(mesh1);
+	////////////////////////////////////////////////////////////
+	// setup markerRoots
+	////////////////////////////////////////////////////////////
 
-    // Add glowing edges
-    let edges = new THREE.EdgesGeometry(boxGeometry);
-    let edgeMaterial = new THREE.ShaderMaterial({
-        uniforms: {
-            glowColor: { type: "c", value: new THREE.Color(0xffffff) },
-            viewVector: { type: "v3", value: camera.position }
-        },
-        vertexShader: `
-            uniform vec3 viewVector;
-            varying float intensity;
-            void main() {
-                vec3 vNormal = normalize(normalMatrix * normal);
-                vec3 vNormel = normalize(normalMatrix * viewVector);
-                intensity = pow(0.8 - dot(vNormal, vNormel), 6.0);
-                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-            }
-        `,
-        fragmentShader: `
-            uniform vec3 glowColor;
-            varying float intensity;
-            void main() {
-                vec3 glow = glowColor * intensity;
-                gl_FragColor = vec4(glow, 1.0);
-            }
-        `,
-        side: THREE.FrontSide,
-        blending: THREE.AdditiveBlending,
-        transparent: true
-    });
-    let edgeMesh = new THREE.Mesh(edges, edgeMaterial);
-    mesh1.add(edgeMesh);
+	// build markerControls
+	markerRoot1 = new THREE.Group();
+	scene.add(markerRoot1);
+	let markerControls1 = new THREEx.ArMarkerControls(arToolkitContext, markerRoot1, {
+		type: 'pattern', patternUrl: "data/test-pattern.patt",
+	});
 
-    // Initialize raycaster and mouse
-    raycaster = new THREE.Raycaster();
-    mouse = new THREE.Vector2();
+	let geometry1 = new THREE.CubeGeometry(1,1,1);
+	let material1 = new THREE.MeshNormalMaterial({
+		transparent: true,
+		opacity: 0.5,
+		side: THREE.DoubleSide
+	});
 
-    // Add event listener for clicks
-    renderer.domElement.addEventListener('click', onDocumentMouseClick, false);
+	mesh1 = new THREE.Mesh( geometry1, material1 );
+	mesh1.position.y = 0.5;
 
-    // Post-processing
-    composer = new THREE.EffectComposer(renderer);
-    var renderPass = new THREE.RenderPass(scene, camera);
-    composer.addPass(renderPass);
+	markerRoot1.add( mesh1 );
 
-    fxaaPass = new THREE.ShaderPass(THREE.FXAAShader);
-    fxaaPass.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight);
-    fxaaPass.renderToScreen = true;
-    composer.addPass(fxaaPass);
-}
-
-function onDocumentMouseClick(event) {
-    event.preventDefault();
-
-    // Calculate mouse position in normalized device coordinates (-1 to +1) for both components
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-    // Update the raycaster with the camera and mouse position
-    raycaster.setFromCamera(mouse, camera);
-
-    // Calculate objects intersecting the picking ray
-    var intersects = raycaster.intersectObjects(markerRoot1.children, true);
-
-    if (intersects.length > 0) {
-        var firstObject = intersects[0].object;
-        if (firstObject === mesh1) {
-            console.log("Clicked Box");
-            alert("Clicked Box");
-        }
-    }
+	// Load GLTF model
+	let loader = new THREE.GLTFLoader();
+	loader.load('models/IHW37-10_Rev-E_.gltf', function (gltf) {
+		let model = gltf.scene;
+		model.scale.set(0.5, 0.5, 0.5); // Adjust the scale if needed
+		model.position.y = 0.5;
+		markerRoot1.add(model);
+	}, undefined, function (error) {
+		console.error(error);
+	});
 }
 
 function update() {
-    // update artoolkit on every frame
-    if (arToolkitSource.ready !== false)
-        arToolkitContext.update(arToolkitSource.domElement);
-
-    // update the animation mixer
-    if (mixer) {
-        mixer.update(deltaTime);
-    }
+	// update artoolkit on every frame
+	if ( arToolkitSource.ready !== false )
+		arToolkitContext.update( arToolkitSource.domElement );
 }
 
 function render() {
-    composer.render();  // Use composer instead of renderer
+	renderer.render( scene, camera );
 }
 
 function animate() {
-    requestAnimationFrame(animate);
-    deltaTime = clock.getDelta();
-    totalTime += deltaTime;
-    update();
-    render();
+	requestAnimationFrame(animate);
+	deltaTime = clock.getDelta();
+	totalTime += deltaTime;
+	update();
+	render();
 }
-</script>
-
-</body>
-</html>
