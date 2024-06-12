@@ -4,7 +4,7 @@
 	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 	<title>Hello, AR Cube!</title>
 	<!-- include three.js library -->
-	<script src='https://cdn.jsdelivr.net/npm/three@0.120.1/build/three.min.js'></script>
+	<script src="https://cdn.jsdelivr.net/npm/three@0.120.1/build/three.min.js"></script>
 	<!-- include jsartoolkit -->
 	<script src="https://cdn.jsdelivr.net/gh/artoolkitx/jsartoolkit5/build/artoolkit.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/gh/artoolkitx/jsartoolkit5/build/artoolkit.api.js"></script>
@@ -14,7 +14,10 @@
 	<script src="https://cdn.jsdelivr.net/gh/jeromeetienne/threex.artoolkit/threex-arbasecontrols.js"></script>
 	<script src="https://cdn.jsdelivr.net/gh/jeromeetienne/threex.artoolkit/threex-armarkercontrols.js"></script>
 	<!-- include GLTFLoader -->
-	<script src="https://cdn.jsdelivr.net/npm/three@0.120.1/examples/js/loaders/GLTFLoader.js"></script>
+	<script type="module">
+		import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.120.1/examples/jsm/loaders/GLTFLoader.js';
+		window.GLTFLoader = GLTFLoader;
+	</script>
 </head>
 
 <body style='margin: 0px; overflow: hidden; font-family: Monospace;'>
@@ -119,7 +122,7 @@ function initialize() {
 	markerRoot1.add(mesh1);
 
 	// Load GLTF model
-	let loader = new THREE.GLTFLoader();
+	let loader = new window.GLTFLoader();
 	loader.load('models/IHW37-10_Rev-E_.gltf', function (gltf) {
 		let model = gltf.scene;
 		model.scale.set(0.5, 0.5, 0.5); // Adjust the scale if needed
