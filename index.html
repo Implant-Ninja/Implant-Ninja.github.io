@@ -28,149 +28,140 @@ var markerRoot1;
 
 var mesh1;
 
+var previousPosition = new THREE.Vector3();
+var previousQuaternion = new THREE.Quaternion();
+var smoothingFactor = 0.1; // Adjust this value as needed
+
 initialize();
 animate();
 
 function initialize() {
-	scene = new THREE.Scene();
+    scene = new THREE.Scene();
 
-	// Set tone mapping and exposure
-	renderer = new THREE.WebGLRenderer({
-		antialias: true,
-		alpha: true
-	});
-	renderer.setClearColor(new THREE.Color('lightgrey'), 0);
-	renderer.setSize(640, 480);
-	renderer.domElement.style.position = 'absolute';
-	renderer.domElement.style.top = '0px';
-	renderer.domElement.style.left = '0px';
-	renderer.toneMapping = THREE.LinearToneMapping;
-	renderer.toneMappingExposure = 1;  // Adjust if necessary
+    renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: true
+    });
+    renderer.setClearColor(new THREE.Color('lightgrey'), 0);
+    renderer.setSize(640, 480);
+    renderer.domElement.style.position = 'absolute';
+    renderer.domElement.style.top = '0px';
+    renderer.domElement.style.left = '0px';
+    renderer.toneMapping = THREE.LinearToneMapping;
+    renderer.toneMappingExposure = 1;
 
-	document.body.appendChild(renderer.domElement);
+    document.body.appendChild(renderer.domElement);
 
-	clock = new THREE.Clock();
-	deltaTime = 0;
-	totalTime = 0;
+    clock = new THREE.Clock();
+    deltaTime = 0;
+    totalTime = 0;
 
-	camera = new THREE.Camera();
-	scene.add(camera);
+    camera = new THREE.Camera();
+    scene.add(camera);
 
-	let ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
-	scene.add(ambientLight);
+    let ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+    scene.add(ambientLight);
 
-	let directionalLight = new THREE.DirectionalLight(0xffffff, 2.5);
-	directionalLight.position.set(1, 1, 1).normalize();
-	scene.add(directionalLight);
+    let directionalLight = new THREE.DirectionalLight(0xffffff, 2.5);
+    directionalLight.position.set(1, 1, 1).normalize();
+    scene.add(directionalLight);
 
-	////////////////////////////////////////////////////////////
-	// setup arToolkitSource
-	////////////////////////////////////////////////////////////
+    arToolkitSource = new THREEx.ArToolkitSource({
+        sourceType: 'webcam',
+    });
 
-	arToolkitSource = new THREEx.ArToolkitSource({
-		sourceType: 'webcam',
-	});
+    function onResize() {
+        arToolkitSource.onResize()
+        arToolkitSource.copySizeTo(renderer.domElement)
+        if (arToolkitContext.arController !== null) {
+            arToolkitSource.copySizeTo(arToolkitContext.arController.canvas)
+        }
+    }
 
-	function onResize() {
-		arToolkitSource.onResize()
-		arToolkitSource.copySizeTo(renderer.domElement)
-		if (arToolkitContext.arController !== null) {
-			arToolkitSource.copySizeTo(arToolkitContext.arController.canvas)
-		}
-	}
+    arToolkitSource.init(function onReady() {
+        onResize()
+    });
 
-	arToolkitSource.init(function onReady() {
-		onResize()
-	});
+    window.addEventListener('resize', function () {
+        onResize()
+    });
 
-	// handle resize event
-	window.addEventListener('resize', function () {
-		onResize()
-	});
+    arToolkitContext = new THREEx.ArToolkitContext({
+        cameraParametersUrl: 'data/camera_para.dat',
+        detectionMode: 'mono'
+    });
 
-	////////////////////////////////////////////////////////////
-	// setup arToolkitContext
-	////////////////////////////////////////////////////////////	
+    arToolkitContext.init(function onCompleted() {
+        camera.projectionMatrix.copy(arToolkitContext.getProjectionMatrix());
+    });
 
-	// create atToolkitContext
-	arToolkitContext = new THREEx.ArToolkitContext({
-		cameraParametersUrl: 'data/camera_para.dat',
-		detectionMode: 'mono'
-	});
+    markerRoot1 = new THREE.Group();
+    scene.add(markerRoot1);
+    let markerControls1 = new THREEx.ArMarkerControls(arToolkitContext, markerRoot1, {
+        type: 'pattern', patternUrl: "data/pattern-logo_only_black.patt",
+    });
 
-	// copy projection matrix to camera when initialization complete
-	arToolkitContext.init(function onCompleted() {
-		camera.projectionMatrix.copy(arToolkitContext.getProjectionMatrix());
-	});
+    let geometry1 = new THREE.BoxGeometry(3, 1, 1);
+    let material1 = new THREE.MeshBasicMaterial({
+        color: 0x000000,
+        transparent: true,
+        opacity: 0.5,
+        side: THREE.DoubleSide
+    });
 
-	////////////////////////////////////////////////////////////
-	// setup markerRoots
-	////////////////////////////////////////////////////////////
+    mesh1 = new THREE.Mesh(geometry1, material1);
+    mesh1.position.y = 0.5;
 
-	// build markerControls
-	markerRoot1 = new THREE.Group();
-	scene.add(markerRoot1);
-	let markerControls1 = new THREEx.ArMarkerControls(arToolkitContext, markerRoot1, {
-		type: 'pattern', patternUrl: "data/pattern-logo_only_black.patt",
-	});
+    let edges = new THREE.EdgesGeometry(geometry1);
+    let line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff }));
 
-	let geometry1 = new THREE.BoxGeometry(3, 1, 1);
-	let material1 = new THREE.MeshBasicMaterial({
-		color: 0x000000,
-		transparent: true,
-		opacity: 0.5,
-		side: THREE.DoubleSide
-	});
+    markerRoot1.add(mesh1);
+    markerRoot1.add(line);
 
-	mesh1 = new THREE.Mesh(geometry1, material1);
-	mesh1.position.y = 0.5;
-
-	// Create an outline for the cube
-	let edges = new THREE.EdgesGeometry(geometry1);
-	let line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff }));
-
-	markerRoot1.add(mesh1);
-	markerRoot1.add(line);
-
-	// Load GLTF model
-	let loader = new THREE.GLTFLoader();
-	loader.load('models/IHW37-10_Rev-E_.gltf', function (gltf) {
-		let model = gltf.scene;
-		model.traverse((node) => {
-			if (node.isMesh) {
-				node.castShadow = true;
-				node.receiveShadow = true;
-				node.material.metalness = 1.0;  // Ensure metalness is set
-				node.material.roughness = 0.5;  // Adjust roughness as needed
-			}
-		});
-		model.scale.set(5.0, 5.0, 5.0); // Adjust the scale if needed
-		model.position.y = 0.5;
-		markerRoot1.add(model);
-	}, undefined, function (error) {
-		console.error(error);
-	});
+    let loader = new THREE.GLTFLoader();
+    loader.load('models/IHW37-10_Rev-E_.gltf', function (gltf) {
+        let model = gltf.scene;
+        model.traverse((node) => {
+            if (node.isMesh) {
+                node.castShadow = true;
+                node.receiveShadow = true;
+                node.material.metalness = 1.0;
+                node.material.roughness = 0.5;
+            }
+        });
+        model.scale.set(5.0, 5.0, 5.0);
+        model.position.y = 0.5;
+        markerRoot1.add(model);
+    }, undefined, function (error) {
+        console.error(error);
+    });
 }
 
 function update() {
-	// update artoolkit on every frame
-	if (arToolkitSource.ready !== false)
-		arToolkitContext.update(arToolkitSource.domElement);
+    if (arToolkitSource.ready !== false) {
+        arToolkitContext.update(arToolkitSource.domElement);
+
+        markerRoot1.position.lerp(previousPosition, smoothingFactor);
+        previousPosition.copy(markerRoot1.position);
+
+        markerRoot1.quaternion.slerp(previousQuaternion, smoothingFactor);
+        previousQuaternion.copy(markerRoot1.quaternion);
+    }
 }
 
 function render() {
-	renderer.render(scene, camera);
+    renderer.render(scene, camera);
 }
 
 function animate() {
-	requestAnimationFrame(animate);
-	deltaTime = clock.getDelta();
-	totalTime += deltaTime;
-	update();
-	render();
+    requestAnimationFrame(animate);
+    deltaTime = clock.getDelta();
+    totalTime += deltaTime;
+    update();
+    render();
 }
-
 </script>
+
 
 </body>
 </html>
