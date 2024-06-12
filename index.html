@@ -1,3 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<title>Hello, AR Cube!</title>
+	<!-- include three.js library -->
+	<script src='https://cdn.jsdelivr.net/npm/three@0.120.1/build/three.min.js'></script>
+	<!-- include jsartoolkit -->
+	<script src="https://cdn.jsdelivr.net/gh/artoolkitx/jsartoolkit5/build/artoolkit.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/gh/artoolkitx/jsartoolkit5/build/artoolkit.api.js"></script>
+	<!-- include threex.artoolkit -->
+	<script src="https://cdn.jsdelivr.net/gh/jeromeetienne/threex.artoolkit/threex-artoolkitsource.js"></script>
+	<script src="https://cdn.jsdelivr.net/gh/jeromeetienne/threex.artoolkit/threex-artoolkitcontext.js"></script>
+	<script src="https://cdn.jsdelivr.net/gh/jeromeetienne/threex.artoolkit/threex-arbasecontrols.js"></script>
+	<script src="https://cdn.jsdelivr.net/gh/jeromeetienne/threex.artoolkit/threex-armarkercontrols.js"></script>
+	<!-- include GLTFLoader -->
+	<script src="https://cdn.jsdelivr.net/npm/three@0.120.1/examples/js/loaders/GLTFLoader.js"></script>
+</head>
+
+<body style='margin: 0px; overflow: hidden; font-family: Monospace;'>
+
+<script>
 var scene, camera, renderer, clock, deltaTime, totalTime;
 
 var arToolkitSource, arToolkitContext;
@@ -12,22 +34,22 @@ animate();
 function initialize() {
 	scene = new THREE.Scene();
 
-	let ambientLight = new THREE.AmbientLight( 0xcccccc, 0.5 );
-	scene.add( ambientLight );
+	let ambientLight = new THREE.AmbientLight(0xcccccc, 0.5);
+	scene.add(ambientLight);
 
 	camera = new THREE.Camera();
 	scene.add(camera);
 
 	renderer = new THREE.WebGLRenderer({
-		antialias : true,
+		antialias: true,
 		alpha: true
 	});
 	renderer.setClearColor(new THREE.Color('lightgrey'), 0)
-	renderer.setSize( 640, 480 );
+	renderer.setSize(640, 480);
 	renderer.domElement.style.position = 'absolute'
 	renderer.domElement.style.top = '0px'
 	renderer.domElement.style.left = '0px'
-	document.body.appendChild( renderer.domElement );
+	document.body.appendChild(renderer.domElement);
 
 	clock = new THREE.Clock();
 	deltaTime = 0;
@@ -38,23 +60,23 @@ function initialize() {
 	////////////////////////////////////////////////////////////
 
 	arToolkitSource = new THREEx.ArToolkitSource({
-		sourceType : 'webcam',
+		sourceType: 'webcam',
 	});
 
 	function onResize() {
 		arToolkitSource.onResize()
 		arToolkitSource.copySizeTo(renderer.domElement)
-		if ( arToolkitContext.arController !== null ) {
+		if (arToolkitContext.arController !== null) {
 			arToolkitSource.copySizeTo(arToolkitContext.arController.canvas)
 		}
 	}
 
-	arToolkitSource.init(function onReady(){
+	arToolkitSource.init(function onReady() {
 		onResize()
 	});
 
 	// handle resize event
-	window.addEventListener('resize', function(){
+	window.addEventListener('resize', function () {
 		onResize()
 	});
 
@@ -69,8 +91,8 @@ function initialize() {
 	});
 
 	// copy projection matrix to camera when initialization complete
-	arToolkitContext.init( function onCompleted(){
-		camera.projectionMatrix.copy( arToolkitContext.getProjectionMatrix() );
+	arToolkitContext.init(function onCompleted() {
+		camera.projectionMatrix.copy(arToolkitContext.getProjectionMatrix());
 	});
 
 	////////////////////////////////////////////////////////////
@@ -84,17 +106,17 @@ function initialize() {
 		type: 'pattern', patternUrl: "data/test-pattern.patt",
 	});
 
-	let geometry1 = new THREE.CubeGeometry(1,1,1);
+	let geometry1 = new THREE.CubeGeometry(1, 1, 1);
 	let material1 = new THREE.MeshNormalMaterial({
 		transparent: true,
 		opacity: 0.5,
 		side: THREE.DoubleSide
 	});
 
-	mesh1 = new THREE.Mesh( geometry1, material1 );
+	mesh1 = new THREE.Mesh(geometry1, material1);
 	mesh1.position.y = 0.5;
 
-	markerRoot1.add( mesh1 );
+	markerRoot1.add(mesh1);
 
 	// Load GLTF model
 	let loader = new THREE.GLTFLoader();
@@ -110,12 +132,12 @@ function initialize() {
 
 function update() {
 	// update artoolkit on every frame
-	if ( arToolkitSource.ready !== false )
-		arToolkitContext.update( arToolkitSource.domElement );
+	if (arToolkitSource.ready !== false)
+		arToolkitContext.update(arToolkitSource.domElement);
 }
 
 function render() {
-	renderer.render( scene, camera );
+	renderer.render(scene, camera);
 }
 
 function animate() {
@@ -125,3 +147,8 @@ function animate() {
 	update();
 	render();
 }
+
+</script>
+
+</body>
+</html>
