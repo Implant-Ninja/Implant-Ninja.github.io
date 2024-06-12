@@ -106,10 +106,10 @@ function initialize() {
 		type: 'pattern', patternUrl: "data/test-pattern.patt",
 	});
 
-	let geometry1 = new THREE.CubeGeometry(1, 1, 1);
+	let geometry1 = new THREE.CubeGeometry(3, 1, 1);
 	let material1 = new THREE.MeshNormalMaterial({
 		transparent: true,
-		opacity: 0.5,
+		opacity: 0.1,
 		side: THREE.DoubleSide
 	});
 
@@ -122,7 +122,7 @@ function initialize() {
 	let loader = new THREE.GLTFLoader();
 	loader.load('models/IHW37-10_Rev-E_.gltf', function (gltf) {
 		let model = gltf.scene;
-		model.scale.set(0.5, 0.5, 0.5); // Adjust the scale if needed
+		model.scale.set(5.0, 5.0, 5.0); // Adjust the scale if needed
 		model.position.y = 0.5;
 		markerRoot1.add(model);
 	}, undefined, function (error) {
